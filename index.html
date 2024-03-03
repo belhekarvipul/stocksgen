@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>StockGen</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="bootstrap.min.css">
+        <script src="jquery-3.7.1.min.js"></script>
+        <script src="bootstrap.min.js"></script>
+        <style>
+            #header{
+                font-weight: 800;
+                text-shadow: 3px 2px lightgray;
+            }
+
+            .BoxFormatting{
+                border: 2px solid lightgray;
+                border-radius: 5px;
+                box-shadow: 0 -10px 30px lightgray;
+                padding: 25px;
+            }
+
+            .BoxFormatting_withShadow{
+                border: 2px solid lightgray;
+                border-radius: 5px;
+                box-shadow: 0 0 20px lightgray;
+                padding: 35px;
+            }
+
+            .list-group-item{
+                display: flex;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <center><h2 id="header">StockGen</h2></center>
+            <hr>
+            <div class="BoxFormatting" style="text-align: center;">
+                Total Invested Amount: <span id="totalInvested">&#x20b9;00.00</span>&emsp;&emsp;
+                Total Current Amount: <span id="totalCurrent">&#x20b9;00.00</span>&emsp;&emsp;
+                Total Returns: <span id="totalReturn">&#x20b9;00.00</span>
+            </div>
+            <div class="BoxFormatting_withShadow">
+                <ul class="list-group" style="margin-bottom: 0px;">
+                    <li class="list-group-item">
+                        <span style="width: 30%;"><b>Company Name</b></span>
+                        <span style="width: 14%; text-align: center;"><b>Current Price</b></span>
+                        <span style="width: 14%; text-align: center;"><b>Purchase Price</b></span>
+                        <span style="width: 14%; text-align: center;"><b>Quantity</b></span>
+                        <span style="width: 14%; text-align: center;"><b>Invested Amount</b></span>
+                        <span style="width: 14%; text-align: center;"><b>Current Amount</b></span>
+                    </li>
+                </ul>
+                <ul id="stock_list" class="list-group"></ul>
+            </div>
+        </div>
+        <script>
+            const api_url = 'https://assets.msn.com/service/Finance/Quotes';
+            const api_key = '0QfOX3Vn51YCzitbLaRkTTBadtWpgTN8NZLW0C1SEM';
+            const stockList = document.getElementById('stock_list');
+            const spn_totalInvested = document.getElementById('totalInvested');
+            const spn_totalCurrent = document.getElementById('totalCurrent');
+            const spn_totalReturn = document.getElementById('totalReturn');
+
+            const investments = [
+                {'CompanyName':'IRFC', 'CompanyId':'bxjznm', 'purchasePrice':'160.50', 'quantity':'7'},
+                {'CompanyName':'RVNL', 'CompanyId':'bppmsm', 'purchasePrice':'288.70', 'quantity':'4'},
+                {'CompanyName':'NTPC', 'CompanyId':'ahdnim', 'purchasePrice':'318.00', 'quantity':'6'},
+                {'CompanyName':'NHPC', 'CompanyId':'ahj6nm', 'purchasePrice':'88.50', 'quantity':'10'},
+            ];
+
+            const companies = investments.map(data => { return data.CompanyId }).join();
+
+            fetch(api_url + '?apikey=' + api_key + '&ids=' + companies + '&wrapodata=false')
+            .then(response => response.json())
+            .then(response => {
+                var totalInvested = 0, totalCurrent = 0;
+
+                response.forEach(data => {
+                    data = data[0];
+                    var investment = investments.filter(i => (i.CompanyId == data._p))[0];
+                    var currentPrice = Number(data.price).toFixed(2);
+                    var invested = (investment.quantity * Math.fround(investment.purchasePrice)).toFixed(2);
+                    var current = (investment.quantity * Math.fround(currentPrice)).toFixed(2);
+                    totalInvested += Number(invested);
+                    totalCurrent += Number(current);
+
+                    var item = document.createElement('li');
+                    item.classList.add('list-group-item');
+                    item.innerHTML = `<span style="width:30%">${data.displayName}</span>
+                    <span style="width: 14%; text-align: center;">&#x20b9;${currentPrice}</span>
+                    <span style="width: 14%; text-align: center;">&#x20b9;${investment.purchasePrice}</span>
+                    <span style="width: 14%; text-align: center;">${investment.quantity}</span>
+                    <span style="width: 14%; text-align: center;">&#x20b9;${invested}</span>
+                    <span style="width: 14%; text-align: center; color:${Number(invested) < Number(current) ? 'green' : 'red'};">
+                        <b>&#x20b9;${current}</b></span>`;
+                    
+                    stockList.appendChild(item);
+                });
+
+                var totalReturn = totalCurrent - totalInvested;
+                spn_totalInvested.innerHTML = '<b>&#x20b9;' + Math.fround(totalInvested).toFixed(2) + '</b>';
+                spn_totalCurrent.innerHTML = '<b>&#x20b9;' + Math.fround(totalCurrent).toFixed(2) + '</b>';
+                spn_totalReturn.innerHTML = '<b>&#x20b9;' + Math.fround(totalReturn).toFixed(2) + '</b>';
+                spn_totalCurrent.style.color = totalReturn > 0 ? 'green' : 'red';
+                spn_totalReturn.style.color = totalReturn > 0 ? 'green' : 'red';
+            })
+            .catch(error => {
+                alert('Something went wrong! Check system logs.');
+                console.log('Error fetching data from service:', error);
+            });
+        </script>
+    </body>
+</html>
